@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathMaster - Math Game</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #0D1117;
+            --bg-light: #161B22;
+            --border-color: #30363D;
+            --text-primary: #C9D1D9;
+            --text-secondary: #8B949E;
+            --blue: #2F81F7;
+            --blue-bg: rgba(47, 129, 247, 0.1);
+            --green: #3FB950;
+            --green-bg: rgba(63, 185, 80, 0.1);
+            --orange: #F7B60E;
+            --orange-bg: rgba(247, 182, 14, 0.1);
+            --red: #E5536F;
+            --red-bg: rgba(229, 83, 111, 0.1);
+            --bg-card: #2E2E3C;
+            --yellow-trophy: #FFD233;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent; 
+        }
+        html, body { height: 100%; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- SCREEN MANAGEMENT --- */
+        .screen {
+            display: none; 
+            width: 100%;
+            /* Default Mobile Width */
+            max-width: 420px; 
+            margin: 0 auto;
+        }
+        .screen.active {
+            display: block; 
+            animation: fadeIn 0.4s ease-out; 
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- MENU SCREEN --- */
+        #menu-screen header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        #menu-screen h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        #menu-screen .subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+        .challenge-grid {
+            display: grid;
+            gap: 16px;
+            /* Default 1 kolom untuk HP */
+            grid-template-columns: 1fr; 
+        }
+        .card {
+            background-color: var(--bg-light);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .card:hover {
+            transform: scale(1.03); 
+            border-color: var(--text-primary);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); 
+        }
+        .card:active {
+            transform: scale(0.98); 
+        }
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            margin: 0 auto 16px auto;
+            transition: transform 0.2s ease;
+        }
+        .card:hover .card-icon {
+            transform: scale(1.1); 
+        }
+        .card-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke: white;
+            stroke-width: 2;
+            fill: none;
+        }
+        .card-icon.red svg { fill: white; stroke: none; } 
+        
+        .card-icon.blue { background-color: var(--blue); }
+        .card-icon.green { background-color: var(--green); }
+        .card-icon.orange { background-color: var(--orange); }
+        .card-icon.red { background-color: var(--red); }
+
+        .card h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+        .card-tag {
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .card-tag.blue { color: var(--blue); background-color: var(--blue-bg); }
+        .card-tag.green { color: var(--green); background-color: var(--green-bg); }
+        .card-tag.orange { color: var(--orange); background-color: var(--orange-bg); }
+        .card-tag.red { color: var(--red); background-color: var(--red-bg); }
+
+        /* --- GAME & GAME OVER SCREEN --- */
+        .game-container {
+            background-color: var(--bg-light);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+        }
+        .game-hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .hud-item {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .hud-item span {
+            color: var(--text-primary);
+            font-size: 20px;
+        }
+        #hud-lives, #hud-timer { display: none; }
+
+        .problem-container {
+            margin: 40px 0;
+            min-height: 80px;
+        }
+        .problem-text {
+            font-size: 64px;
+            font-weight: 700;
+            color: var(--text-primary);
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .problem-text.new {
+            animation: popIn 0.2s ease-out;
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .answer-input {
+            font-family: 'Inter', sans-serif;
+            font-size: 32px;
+            padding: 16px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            text-align: center;
+            width: 100%;
+            transition: border-color 0.2s ease;
+            margin-bottom: 16px;
+            -moz-appearance: textfield; 
+        }
+        .answer-input::-webkit-outer-spin-button,
+        .answer-input::-webkit-inner-spin-button {
+            -webkit-appearance: none; 
+            margin: 0;
+        }
+        .answer-input:focus {
+            outline: none;
+            border-color: var(--blue);
+        }
+        
+        .answer-input.wrong {
+            animation: shake 0.4s;
+            border-color: var(--red);
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-8px); }
+            80% { transform: translateX(8px); }
+        }
+
+        .answer-input.correct {
+            border-color: var(--green);
+            animation: pulseCorrect 0.4s ease-out;
+        }
+        @keyframes pulseCorrect {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.01); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .submit-btn, .action-btn {
+            font-family: 'Inter', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.2s ease, transform 0.1s ease;
+            width: 100%;
+        }
+        .submit-btn { background-color: var(--blue); color: white; }
+        .submit-btn:hover { opacity: 0.9; }
+        .submit-btn:active { transform: scale(0.98); }
+        
+        .action-btn { background-color: var(--border-color); color: var(--text-primary); }
+        .action-btn:active { transform: scale(0.98); }
+        
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            margin-top: 24px;
+            font-size: 14px;
+            padding: 8px;
+            display: block;
+            width: 100%;
+        }
+        .back-btn:hover { text-decoration: underline; }
+        
+        /* Game Over Styles */
+        .game-over-container {
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            padding: 40px 32px;
+            text-align: center;
+            width: 100%;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .trophy-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, var(--yellow-trophy), #EAA900);
+            box-shadow: 0 4px 15px rgba(255, 210, 51, 0.2);
+            display: grid;
+            place-items: center;
+            margin: 0 auto 24px auto;
+        }
+        
+        .trophy-icon svg {
+            width: 50px;
+            height: 50px;
+            fill: #332A00;
+        }
+
+        .game-over-container h1 {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .game-over-container p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .stat-item {
+            background: var(--bg-dark);
+            padding: 16px;
+            border-radius: 10px;
+        }
+
+        .stat-item-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .stat-item-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .game-over-actions {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 32px;
+        }
+
+        /* ========================================= */
+        /* === RESPONSIVE LAPTOP / DESKTOP SETUP === */
+        /* ========================================= */
+        @media (min-width: 768px) {
+            /* Lebarkan layar Menu untuk Desktop */
+            #menu-screen {
+                max-width: 900px; 
+            }
+
+            /* Menu jadi Grid 2 Kolom */
+            .challenge-grid {
+                grid-template-columns: 1fr 1fr; 
+                gap: 24px;
+            }
+
+            /* Tapi.. Game & Game Over tetap ramping agar fokus (tidak melebar) */
+            #game-screen, #game-over-screen {
+                max-width: 480px; 
+            }
+            
+            /* Perbesar sedikit teks soal di desktop */
+            .problem-text {
+                font-size: 80px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <main id="menu-screen" class="screen active">
+        <header>
+            <h1>MathMaster</h1>
+            <p class="subtitle">Choose Your Challenge</p>
+        </header>
+
+        <div class="challenge-grid">
+            
+            <div class="card" data-mode="multiplication">
+                <div class="card-icon blue">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
+                <h3>Multiplication</h3>
+                <p>Master times tables with focused practice</p>
+                <div class="card-tag blue">☆ Practice Mode</div>
+            </div>
+
+            <div class="card" data-mode="division">
+                <div class="card-icon green">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="2"></circle><line x1="4" y1="12" x2="20" y2="12"></line><circle cx="12" cy="18" r="2"></circle></svg>
+                </div>
+                <h3>Division</h3>
+                <p>Perfect your division skills step by step</p>
+                <div class="card-tag green">☆ Practice Mode</div>
+            </div>
+            
+            <div class="card" data-mode="time">
+                <div class="card-icon orange">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><polyline points="12 9 12 13 14 15"></polyline><line x1="5" y1="3" x2="7" y2="5"></line><line x1="19" y1="3" x2="17" y2="5"></line></svg>
+                </div>
+                <h3>Time Attack</h3>
+                <p>Race against the clock for high scores</p>
+                <div class="card-tag orange">◎ 60 Seconds</div>
+            </div>
+
+            <div class="card" data-mode="survival">
+                <div class="card-icon red">
+                    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                </div>
+                <h3>Survival</h3>
+                <p>Three lives to best your score</p>
+                <div class="card-tag red">♡ 3 Lives</div>
+            </div>
+
+        </div>
+    </main>
+
+    <section id="game-screen" class="screen">
+        <div class="game-container">
+            <div class="game-hud">
+                <div class="hud-item" id="hud-score">Score: <span>0</span></div>
+                <div class="hud-item" id="hud-lives">Lives: <span>♡♡♡</span></div>
+                <div class="hud-item" id="hud-timer">Time: <span>60</span>s</div>
+            </div>
+
+            <div class="problem-container">
+                <div class="problem-text" id="problem-text">1 × 10</div>
+            </div>
+
+            <form id="answer-form">
+                <input type="tel" id="answer-input" class="answer-input" placeholder="Your Answer" required autocomplete="off" inputmode="numeric">
+                <button type="submit" class="submit-btn">Submit</button>
+            </form>
+
+            <button class="back-btn" data-target="menu-screen">Back to Menu</button>
+        </div>
+    </section>
+
+    <section id="game-over-screen" class="screen">
+        <div class="game-over-container">
+            <div class="trophy-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <path d="M256 0C114.6 0 0 114.6 0 256S114.6 512 256 512s256-114.6 256-256S397.4 0 256 0zM368 384H144c-8.8 0-16-7.2-16-16s7.2-16 16-16h224c8.8 0 16 7.2 16 16s-7.2 16-16 16zm40-128c-8.8 0-16-7.2-16-16V192c0-52.9-43.1-96-96-96h-80c-52.9 0-96 43.1-96 96v48c0 8.8-7.2 16-16 16s-16-7.2-16-16V192c0-70.6 57.4-128 128-128h80c70.6 0 128 57.4 128 128v48c0 8.8-7.2 16-16 16z"/>
+                </svg>
+            </div>
+
+            <h1 id="game-over-title">Game Over!</h1>
+            <p>Great job! Here's how you performed:</p>
+
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-item-label">Final Score</div>
+                    <div id="final-score" class="stat-item-value">0</div>
+                </div>
+            </div>
+            
+            <div class="game-over-actions">
+                <button class="action-btn" id="play-again-btn">Play Again</button>
+                <button class="action-btn back-btn" data-target="menu-screen">Back to Menu</button>
+            </div>
+        </div>
+    </section>
+
+
+    <script>
+        
+        // === 1. AUDIO MANAGER ===
+        class ProfessionalAudioManager {
+            
+            constructor() {
+                this.audioCtx = null;
+                this.globalGain = null;
+                this.isReady = false;
+                this.buffers = {}; 
+                this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            }
+
+            async ensureAudioEnabled() {
+                if (this.isReady) return;
+                
+                try {
+                    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    this.globalGain = this.audioCtx.createGain();
+                    this.globalGain.gain.setValueAtTime(0.5, this.audioCtx.currentTime); 
+                    this.globalGain.connect(this.audioCtx.destination);
+                    
+                    if (this.audioCtx.state === 'suspended') {
+                        await this.audioCtx.resume();
+                    }
+                    
+                    this.isReady = true;
+                    await this.loadAllSounds(); 
+                } catch (e) {
+                    console.error("Web Audio API tidak didukung.", e);
+                }
+            }
+            
+            async loadSound(name, url) {
+                if (!this.audioCtx) return;
+                try {
+                    const response = await fetch(url);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const audioBuffer = await this.audioCtx.decodeAudioData(arrayBuffer);
+                    this.buffers[name] = audioBuffer;
+                } catch(e) {
+                    console.error(`Gagal memuat suara: ${name}`, e);
+                }
+            }
+            
+            async loadAllSounds() {
+                await Promise.all([
+                    this.loadSound('click', 'https://actions.google.com/sounds/v1/ui/ui_tap_reverse.ogg'),
+                    this.loadSound('wrong', 'https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg'),
+                    this.loadSound('victory', 'https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg'),
+                    this.loadSound('gameOver', 'https://actions.google.com/sounds/v1/impacts/crash.ogg')
+                ]);
+            }
+
+            playSound(bufferName) {
+                if (!this.isReady || !this.buffers[bufferName] || this.prefersReducedMotion) return;
+
+                const source = this.audioCtx.createBufferSource();
+                source.buffer = this.buffers[bufferName];
+                source.connect(this.globalGain);
+                source.start(0);
+            }
+            
+            playCorrectSound({ variant = 0 } = {}) {
+                if (!this.isReady || this.prefersReducedMotion) return;
+
+                const now = this.audioCtx.currentTime;
+                const randomDetune = Math.random() * 6 - 3;
+                
+                const osc = this.audioCtx.createOscillator();
+                osc.type = 'triangle';
+                osc.detune.setValueAtTime(randomDetune, now);
+                
+                const gainNode = this.audioCtx.createGain();
+                gainNode.connect(this.globalGain);
+                osc.connect(gainNode);
+
+                let baseFreq;
+                switch(variant) {
+                    case 0: baseFreq = 523.25; break; 
+                    case 1: baseFreq = 659.25; break; 
+                    case 2: baseFreq = 783.99; break; 
+                    default: baseFreq = 523.25;
+                }
+                osc.frequency.setValueAtTime(baseFreq, now);
+
+                                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(1.0, now + 0.005);
+                gainNode.gain.linearRampToValueAtTime(0.1, now + 0.15);
+                gainNode.gain.setValueAtTime(0.1, now + 0.15);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.35);
+
+                osc.start(now);
+                osc.stop(now + 0.4);
+                
+                osc.onended = () => {
+                    gainNode.disconnect();
+                    osc.disconnect();
+                };
+            }
+        }
+
+        // === 2. INISIASI GAME ===
+        const AudioManager = new ProfessionalAudioManager();
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const screens = document.querySelectorAll('.screen');
+            const challengeCards = document.querySelectorAll('.card');
+            const backToMenuButtons = document.querySelectorAll('.back-btn');
+            
+            const hudScore = document.querySelector('#hud-score span');
+            const hudLives = document.getElementById('hud-lives');
+            const hudLivesText = document.querySelector('#hud-lives span');
+            const hudTimer = document.getElementById('hud-timer');
+            const hudTimerText = document.querySelector('#hud-timer span');
+            const problemText = document.getElementById('problem-text');
+            const answerForm = document.getElementById('answer-form');
+            const answerInput = document.getElementById('answer-input');
+            
+            const playAgainButton = document.getElementById('play-again-btn');
+            const gameOverTitle = document.getElementById('game-over-title');
+            
+            const finalScoreElem = document.getElementById('final-score');
+
+            // === 3. STATE GAME ===
+            let currentMode = ''; 
+            let score = 0;
+            let lives = 3;
+            let timer = 60;
+            let timerInterval = null; 
+            let currentProblem = { question: '', answer: 0 };
+            
+            // --- SETTING: Max Angka 1-10 ---
+            const maxNumber = 10;
+            
+            // --- SETTING: History Soal (Anti-Repetisi) ---
+            let questionHistory = new Set(); 
+
+            function showScreen(screenId) {
+                clearInterval(timerInterval); 
+                screens.forEach(screen => screen.classList.remove('active'));
+                document.getElementById(screenId).classList.add('active');
+            }
+
+            function startGame(mode) {
+                currentMode = mode;
+                score = 0;
+                questionHistory.clear(); // Reset riwayat soal
+                
+                hudScore.textContent = '0';
+                hudLives.style.display = 'none';
+                hudTimer.style.display = 'none';
+                
+                showScreen('game-screen');
+                
+                if (mode === 'survival') {
+                    lives = 3;
+                    hudLives.style.display = 'block';
+                    updateLivesDisplay();
+                }
+                
+                if (mode === 'time') {
+                    timer = 60; 
+                    hudTimer.style.display = 'block';
+                    hudTimerText.textContent = timer;
+                    startTimer();
+                }
+                
+                generateProblem();
+                setTimeout(() => answerInput.focus(), 400); 
+            }
+
+            function generateProblem() {
+                let num1, num2, key;
+                let attempts = 0;
+                
+                // Loop untuk mencari soal yang belum pernah keluar
+                do {
+                    num1 = Math.floor(Math.random() * maxNumber) + 1;
+                    num2 = Math.floor(Math.random() * maxNumber) + 1;
+                    
+                    // Buat kode unik soal. Urutkan angka agar 4x3 sama dengan 3x4
+                    let small = num1 < num2 ? num1 : num2;
+                    let big = num1 > num2 ? num1 : num2;
+                    key = `${small}-${big}`;
+                    
+                    attempts++;
+                    
+                    // Safety valve: jika sudah mencoba 50x dan semua soal terpakai, reset history
+                    if (attempts > 50) {
+                        questionHistory.clear();
+                        break;
+                    }
+                    
+                } while (questionHistory.has(key)); // Ulangi jika soal sudah ada di history
+                
+                // Simpan soal baru ke history
+                questionHistory.add(key);
+
+                if (currentMode === 'multiplication' || currentMode === 'time' || currentMode === 'survival') {
+                    currentProblem.question = `${num1} × ${num2}`;
+                    currentProblem.answer = num1 * num2;
+                } else if (currentMode === 'division') {
+                    let product = num1 * num2;
+                    currentProblem.question = `${product} ÷ ${num2}`;
+                    currentProblem.answer = num1;
+                }
+                
+                problemText.textContent = currentProblem.question;
+                answerInput.value = '';
+                
+                problemText.classList.add('new');
+                setTimeout(() => problemText.classList.remove('new'), 200);
+            }
+
+            function triggerFeedback(isCorrect) {
+                answerInput.classList.remove('wrong', 'correct'); 
+                
+                if (isCorrect) {
+                    answerInput.classList.add('correct');
+                    
+                    // Mainkan suara benar (sintesis instan)
+                    AudioManager.playCorrectSound({ variant: Math.floor(Math.random() * 3) });
+
+                } else {
+                    answerInput.classList.add('wrong');
+                    AudioManager.playSound('wrong');
+                }
+                
+                setTimeout(() => {
+                    answerInput.classList.remove('wrong', 'correct'); 
+                }, 400); 
+            }
+
+
+            function checkAnswer() {
+                const userAnswer = parseInt(answerInput.value, 10);
+                
+                if (isNaN(userAnswer)) {
+                    triggerFeedback(false); 
+                    return; 
+                }
+
+                if (userAnswer === currentProblem.answer) {
+                    score++;
+                    hudScore.textContent = score;
+                    triggerFeedback(true); 
+                } else {
+                    triggerFeedback(false); 
+                    
+                    if (currentMode === 'survival') {
+                        lives--;
+                        updateLivesDisplay();
+                        if (lives <= 0) {
+                            endGame('survival');
+                            return;
+                        }
+                    }
+                }
+                
+                generateProblem();
+            }
+            
+            function updateLivesDisplay() {
+                hudLivesText.textContent = '♡'.repeat(lives) + '·'.repeat(3 - lives);
+            }
+            
+            function startTimer() {
+                clearInterval(timerInterval); 
+                
+                timerInterval = setInterval(() => {
+                    timer--; 
+                    hudTimerText.textContent = timer; 
+                    if (timer <= 0) {
+                        endGame('time'); 
+                    }
+                }, 1000); 
+            }
+
+            function endGame(reason) {
+                clearInterval(timerInterval); 
+                
+                finalScoreElem.textContent = score;
+                
+                if (reason === 'time') {
+                    gameOverTitle.textContent = "Time's Up!";
+                    AudioManager.playSound('victory');
+                } else if (reason === 'survival') {
+                    gameOverTitle.textContent = "Game Over!";
+                    AudioManager.playSound('gameOver');
+                }
+
+                showScreen('game-over-screen');
+            }
+
+            // === 4. EVENT LISTENERS ===
+            challengeCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    AudioManager.ensureAudioEnabled(); 
+                    AudioManager.playSound('click'); 
+                    
+                    const mode = card.dataset.mode;
+                    if (mode) {
+                        startGame(mode); 
+                    }
+                });
+            });
+
+            answerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                checkAnswer();
+            });
+
+            backToMenuButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    AudioManager.playSound('click'); 
+                    showScreen(e.target.dataset.target || 'menu-screen');
+                });
+            });
+
+            playAgainButton.addEventListener('click', () => {
+                AudioManager.playSound('click'); 
+                startGame(currentMode); 
+            });
+
+        });
+    </script>
+</body>
+</html>
